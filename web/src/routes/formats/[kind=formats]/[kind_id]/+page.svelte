@@ -5,6 +5,7 @@
     ApiPaths,
     type Leaderboard,
     type Player,
+    type Prize,
     type TimeslotDatetimes,
     type TimeWithPlayer
   } from '$lib/schema';
@@ -13,7 +14,7 @@
   import Table from '$lib/components/display/table/Table.svelte';
   import Section from '$lib/components/layout/Section.svelte';
   import TablePlayer from '$lib/components/display/table/TablePlayer.svelte';
-  import { twTableGradients, validDuration } from '$lib/helpers/times';
+  import { formatPosition, twTableGradients, validDuration } from '$lib/helpers/times';
   import TableTime from '$lib/components/display/table/TableTime.svelte';
   import TemporalDate from '$lib/components/display/TemporalDate.svelte';
   import Content from '$lib/components/layout/Content.svelte';
@@ -90,11 +91,50 @@
       {/if}
     {/await}
   {:else}
-    <EventHeader event={data.ewl} />
+    {#await Client.GET( ApiPaths.get_prizepool_total, { params: { path: { event_id: data.ewl.event.id } } } )}
+      <EventHeader event={data.ewl} />
+    {:then { data: prizepoolTotal }}
+      <EventHeader event={data.ewl} prizepool={prizepoolTotal} />
+      {#if prizepoolTotal?.total}
+        <Content>
+          <Collapse label="prizepool info">
+            {#await Client.GET( ApiPaths.get_leaderboard_prizepool, { params: { path: { leaderboard_id: selectedLeaderboardID } } } )}
+              <span></span>
+            {:then { data: prizepool }}
+              <div class="grid w-fit grid-flow-col grid-rows-4 gap-x-2 gap-y-0.5">
+                {#each prizepool as prize}
+                  <div class="flex w-full">
+                    <span class="min-w-12 pl-3 text-left text-primary"
+                      >{formatPosition(prize.position)}</span>
+                    <span>{prize.keys} keys</span>
+                  </div>
+                {/each}
+              </div>
+            {/await}
+          </Collapse>
+        </Content>
+      {/if}
+    {/await}
   {/if}
 
   <Content>
     {#if data.session}
+      {#if (ended_days > 0 && data.session.role === 'admin') || data.session.role === 'dev'}
+        <Section label="admin">
+          <Button
+            onsubmit={async () => {
+              let resp = await Client.POST(ApiPaths.update_event_results, {
+                params: { path: { event_id: data.ewl?.event.id ?? 0 } }
+              });
+              oerror = resp.error;
+              if (resp.response.ok) {
+                refreshPR = !refreshPR;
+              }
+              return resp.response.ok;
+            }}>refresh event results</Button>
+        </Section>
+      {/if}
+
       <Section>
         {#key refreshPR}
           {#await Client.GET( ApiPaths.get_event_pr, { params: { path: { event_id: data.ewl.event.id } } } )}
@@ -120,20 +160,6 @@
         {/key}
 
         <Errors {oerror} />
-
-        {#if (ended_days > 0 && data.session.role === 'admin') || data.session.role === 'dev'}
-          <Button
-            onsubmit={async () => {
-              let resp = await Client.POST(ApiPaths.update_event_results, {
-                params: { path: { event_id: data.ewl?.event.id ?? 0 } }
-              });
-              oerror = resp.error;
-              if (resp.response.ok) {
-                refreshPR = !refreshPR;
-              }
-              return resp.response.ok;
-            }}>refresh event results</Button>
-        {/if}
 
         {#if ended_days < 1 && playerLeaderboard}
           <Button

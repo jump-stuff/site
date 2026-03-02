@@ -18,7 +18,7 @@
 <div class="pointer-events-none flex justify-center">
   <div class="pointer-events-auto flex w-full max-w-5xl flex-col gap-1 bg-base-900">
     <Nav session={data.session} />
-    <main class="relative z-10 flex flex-col bg-base-800">
+    <main class="relative z-10 flex flex-col bg-base-800 pb-3">
       {@render children()}
     </main>
   </div>

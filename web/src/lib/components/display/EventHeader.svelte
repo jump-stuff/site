@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { EventWithLeaderboards, TimeslotInfo } from '$lib/schema';
+  import type { EventWithLeaderboards, PrizepoolTotal, TimeslotInfo } from '$lib/schema';
   import ClassImage from './ClassImage.svelte';
   import Div from './Div.svelte';
   import TemporalDate from './TemporalDate.svelte';
@@ -9,9 +9,10 @@
     event: EventWithLeaderboards;
     href?: string;
     timeslots?: TimeslotInfo | null;
+    prizepool?: PrizepoolTotal | null;
   };
 
-  let { event, href = '', timeslots = null }: Props = $props();
+  let { event, href = '', timeslots = null, prizepool = null }: Props = $props();
 
   function leaderbaordToMaps(l: EventWithLeaderboards['leaderboards']) {
     const maps: Map<string, string[]> = new Map();
@@ -111,6 +112,13 @@
             <TemporalDate datetime={event.event.ends_at} />
           </span>
           <span class="icon-[mdi--clock-outline]"></span>
+        </div>
+      {/if}
+      <!-- prizepool total -->
+      {#if prizepool?.total}
+        <div class="flex items-center gap-2">
+          <span>{prizepool.total} keys</span>
+          <span class="mt-auto icon-[mdi--key]"></span>
         </div>
       {/if}
     </div>

@@ -2,10 +2,11 @@
   import TableEvents from '$lib/components/display/table/presets/TableEvents.svelte';
   import { Temporal } from 'temporal-polyfill';
   import type { PageData, RouteParams } from './$types';
-  import type { EventWithLeaderboards } from '$lib/schema';
+  import { ApiPaths, type EventWithLeaderboards } from '$lib/schema';
   import Section from '$lib/components/layout/Section.svelte';
   import EventHeader from '$lib/components/display/EventHeader.svelte';
   import Content from '$lib/components/layout/Content.svelte';
+  import { Client } from '$lib/api/api';
 
   type Props = {
     data: PageData;
@@ -27,7 +28,11 @@
   {#if currEvents.length}
     <Section label="current {currEvents.length > 1 ? pluralKind : currEvents.at(0)?.event.kind}">
       {#each currEvents as ewl}
-        <EventHeader event={ewl} />
+        {#await Client.GET( ApiPaths.get_prizepool_total, { params: { path: { event_id: ewl.event.id } } } )}
+          <EventHeader event={ewl} />
+        {:then { data: prizepoolTotal }}
+          <EventHeader event={ewl} prizepool={prizepoolTotal} />
+        {/await}
       {/each}
     </Section>
   {/if}

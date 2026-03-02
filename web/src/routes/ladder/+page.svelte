@@ -15,7 +15,7 @@
     data: PageData;
   };
   let { data }: Props = $props();
-  let sort_class = $state('Soldier');
+  let sort_class: string = $state('Soldier');
 
   function sortPlayers(players: Player[]): Player[] {
     return players.sort((a, b) => comparePlayers(a, b, sort_class));
