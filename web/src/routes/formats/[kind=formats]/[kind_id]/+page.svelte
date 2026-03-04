@@ -210,12 +210,14 @@
                 }}><span class="icon-[mdi--key]"></span></Button>
             {/if}
           {/await}
-          <Button
-            table={true}
-            onsubmit={async () => {
-              refreshLeaderboard = !refreshLeaderboard;
-              return true;
-            }}><span class="icon-[mdi--refresh]"></span></Button>
+          {#if ended_days <= 0}
+            <Button
+              table={true}
+              onsubmit={async () => {
+                refreshLeaderboard = !refreshLeaderboard;
+                return true;
+              }}><span class="icon-[mdi--refresh]"></span></Button>
+          {/if}
         </div>
         {#if showPrizepool}
           {#await prizepoolTotalPromise}
@@ -223,7 +225,7 @@
           {:then { data: prizepoolTotal }}
             {#if prizepoolTotal?.total}
               {#await Client.GET( ApiPaths.get_leaderboard_prizepool, { params: { path: { leaderboard_id: selectedLeaderboardID } } } )}
-                <span></span>
+                <TableSkeleton rows={1}></TableSkeleton>
               {:then { data: prizepool }}
                 {#each prizepool as prize}
                   <div class="flex w-full">
@@ -245,7 +247,7 @@
           ? ApiPaths.get_motw_leaderboard_times
           : ApiPaths.get_leaderboard_times}
         {#await Client.GET( leaderboardPath, { params: { path: { leaderboard_id: selectedLeaderboardID } } } )}
-          <TableSkeleton></TableSkeleton>
+          <TableSkeleton rows={3}></TableSkeleton>
         {:then { data: times }}
           <Table data={times ?? []}>
             {#snippet header()}
