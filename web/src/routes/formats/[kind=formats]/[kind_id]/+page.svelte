@@ -39,6 +39,7 @@
 
   let refreshPR: boolean = $state(true);
   let refreshLeaderboard: boolean = $state(true);
+  let showPrizepool: boolean = $state(false);
 
   let ended_days: number = $derived(
     Math.floor(now.since(data?.ewl?.event.ends_at ?? '').seconds / 60 / 60 / 24)
@@ -77,6 +78,9 @@
 </script>
 
 {#if data.ewl}
+  {@const prizepoolTotalPromise = Client.GET(ApiPaths.get_prizepool_total, {
+    params: { path: { event_id: data.ewl.event.id } }
+  })}
   <!-- consider motw timeslots -->
   {#if data.ewl.event.kind == 'motw' && data.session}
     {#await Client.GET( ApiPaths.get_motw, { params: { path: { event_kind: 'motw', kind_id: data.ewl.event.kind_id } } } )}
@@ -95,25 +99,6 @@
       <EventHeader event={data.ewl} />
     {:then { data: prizepoolTotal }}
       <EventHeader event={data.ewl} prizepool={prizepoolTotal} />
-      {#if prizepoolTotal?.total}
-        <Content>
-          <Collapse label="prizepool info">
-            {#await Client.GET( ApiPaths.get_leaderboard_prizepool, { params: { path: { leaderboard_id: selectedLeaderboardID } } } )}
-              <span></span>
-            {:then { data: prizepool }}
-              <div class="grid w-fit grid-flow-col grid-rows-4 gap-x-2 gap-y-0.5">
-                {#each prizepool as prize}
-                  <div class="flex w-full">
-                    <span class="min-w-12 pl-3 text-left text-primary"
-                      >{formatPosition(prize.position)}</span>
-                    <span>{prize.keys} keys</span>
-                  </div>
-                {/each}
-              </div>
-            {/await}
-          </Collapse>
-        </Content>
-      {/if}
     {/await}
   {/if}
 
@@ -212,6 +197,19 @@
           <LeaderboardButtons
             leaderboards={data.ewl.leaderboards}
             bind:selected={selectedLeaderboardID} />
+          <!-- refresh prizepool -->
+          {#await prizepoolTotalPromise}
+            <span></span>
+          {:then { data: prizepoolTotal }}
+            {#if prizepoolTotal?.total}
+              <Button
+                table={true}
+                onsubmit={async () => {
+                  showPrizepool = !showPrizepool;
+                  return true;
+                }}><span class="icon-[mdi--key]"></span></Button>
+            {/if}
+          {/await}
           <Button
             table={true}
             onsubmit={async () => {
@@ -219,6 +217,25 @@
               return true;
             }}><span class="icon-[mdi--refresh]"></span></Button>
         </div>
+        {#if showPrizepool}
+          {#await prizepoolTotalPromise}
+            <span></span>
+          {:then { data: prizepoolTotal }}
+            {#if prizepoolTotal?.total}
+              {#await Client.GET( ApiPaths.get_leaderboard_prizepool, { params: { path: { leaderboard_id: selectedLeaderboardID } } } )}
+                <span></span>
+              {:then { data: prizepool }}
+                {#each prizepool as prize}
+                  <div class="flex w-full">
+                    <span class="min-w-12 pl-3 text-left text-primary">
+                      {formatPosition(prize.position)}</span>
+                    <span>{prize.keys}</span>
+                  </div>
+                {/each}
+              {/await}
+            {/if}
+          {/await}
+        {/if}
       {/if}
 
       {#key refreshLeaderboard && refreshPR}
