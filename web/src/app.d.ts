@@ -1,6 +1,6 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 
-import type { Event, EventWithLeaderboards, Session } from '$lib/schema';
+import type { Event, EventWithLeaderboards, Session, SiteStats } from '$lib/schema';
 
 // for information about these interfaces
 declare global {
@@ -15,6 +15,7 @@ declare global {
       players?: Player[] | undefined;
       events?: Event[] | undefined;
       ewl?: EventWithLeaderboards | undefined;
+      stats?: SiteStats | undefined;
     }
     // interface PageState {}
     // interface Platform {}
