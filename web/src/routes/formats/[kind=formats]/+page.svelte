@@ -29,9 +29,9 @@
     <Section label="current {currEvents.length > 1 ? pluralKind : currEvents.at(0)?.event.kind}">
       {#each currEvents as ewl}
         {#await Client.GET( ApiPaths.get_prizepool_total, { params: { path: { event_id: ewl.event.id } } } )}
-          <EventHeader event={ewl} />
+          <EventHeader event={ewl} href="formats/{params.kind}" />
         {:then { data: prizepoolTotal }}
-          <EventHeader event={ewl} prizepool={prizepoolTotal} />
+          <EventHeader event={ewl} prizepool={prizepoolTotal} href="formats/{params.kind}" />
         {/await}
       {/each}
     </Section>

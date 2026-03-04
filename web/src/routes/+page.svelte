@@ -42,16 +42,16 @@
     {#each data.events as ewl}
       {#if ewl.event.kind === 'motw'}
         {#await Client.GET( ApiPaths.get_timeslot_info, { params: { path: { event_id: ewl.event.id } } } )}
-          <EventHeader event={ewl} />
+          <EventHeader event={ewl} href="formats/{ewl.event.kind}" />
         {:then { data: timeslots }}
-          <EventHeader event={ewl} {timeslots} />
+          <EventHeader event={ewl} {timeslots} href="formats/{ewl.event.kind}" />
         {/await}
       {:else}
         <!-- get prizepool info for non-motw -->
         {#await Client.GET( ApiPaths.get_prizepool_total, { params: { path: { event_id: ewl.event.id } } } )}
-          <EventHeader event={ewl} />
+          <EventHeader event={ewl} href="formats/{ewl.event.kind}" />
         {:then { data: prizepoolTotal }}
-          <EventHeader event={ewl} prizepool={prizepoolTotal} />
+          <EventHeader event={ewl} prizepool={prizepoolTotal} href="formats/{ewl.event.kind}" />
         {/await}
       {/if}
     {/each}
