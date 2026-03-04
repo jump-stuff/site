@@ -5,6 +5,7 @@
   import type { PageData } from './$types';
   import type { Snippet } from 'svelte';
   import Logo from '$lib/components/layout/Logo.svelte';
+  import NavigationProgress from '$lib/components/display/NavigationProgress.svelte';
 
   type Props = {
     data: PageData;
@@ -14,6 +15,8 @@
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
+
+<NavigationProgress />
 
 <div class="pointer-events-none flex justify-center">
   <div class="pointer-events-auto flex w-full max-w-5xl flex-col gap-1 bg-base-900">
