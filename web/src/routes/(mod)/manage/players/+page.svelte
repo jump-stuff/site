@@ -93,7 +93,7 @@
           label="role"
           type="text"
           placeholder={player.role}
-          options={['player', 'mod', 'admin']}
+          options={['player', 'consultant', 'mod', 'admin']}
           onsubmit={async (value) => {
             const resp = await Client.POST(ApiPaths.update_role, {
               // @ts-ignore

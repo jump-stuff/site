@@ -6,7 +6,12 @@ export const load: LayoutServerLoad = async ({ parent }) => {
   if (!session) {
     redirect(302, '/');
   }
-  if (session.role === 'admin' || session.role === 'mod' || session.role === 'dev') {
+  if (
+    session.role === 'admin' ||
+    session.role === 'mod' ||
+    session.role === 'dev' ||
+    session.role === 'consultant'
+  ) {
     return;
   } else {
     redirect(302, '/');
