@@ -55,3 +55,7 @@ type PrizepoolTotalOutput struct {
 type PrizepoolOutput struct {
 	Body []Prize
 }
+
+type SiteStatsOutput struct {
+	Body SiteStats
+}

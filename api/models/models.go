@@ -127,3 +127,9 @@ type Prize struct {
 	Position      int64  `json:"position"`
 	Keys          int64  `json:"keys"`
 }
+
+type SiteStats struct {
+	PlayerCount int64 `json:"player_count"`
+	TimesCount  int64 `json:"times_count"`
+	EventCount  int64 `json:"event_count"`
+}

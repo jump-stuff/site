@@ -45,7 +45,7 @@ func RegisterOpenRoutes(internalApi *huma.Group) {
 
 	huma.Register(internalApi, huma.Operation{
 		Method:      http.MethodGet,
-		Path:        "/events/{event_kind}",
+		Path:        "/events/recent",
 		Tags:        []string{"events"},
 		Summary:     "get recent events",
 		Description: "get most recent reoccuring events",
@@ -96,6 +96,14 @@ func RegisterOpenRoutes(internalApi *huma.Group) {
 		Description: "get an event's prizepool total",
 		OperationID: "get-prizepool-total",
 	}, HandleGetPrizepoolTotal)
+
+	huma.Register(internalApi, huma.Operation{
+		Method:      http.MethodGet,
+		Path:        "/stats",
+		Summary:     "get site stats",
+		Description: "get site stats",
+		OperationID: "get-stats",
+	}, HandleGetStats)
 }
 
 func RegisterSessionRoutes(sessionApi *huma.Group) {
