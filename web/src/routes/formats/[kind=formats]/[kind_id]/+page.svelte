@@ -208,9 +208,17 @@
     <Section label={'leaderboards'}>
       <!-- select leaderboard buttons -->
       {#if data.ewl.leaderboards?.length}
-        <LeaderboardButtons
-          leaderboards={data.ewl.leaderboards}
-          bind:selected={selectedLeaderboardID} />
+        <div class="flex w-full">
+          <LeaderboardButtons
+            leaderboards={data.ewl.leaderboards}
+            bind:selected={selectedLeaderboardID} />
+          <Button
+            table={true}
+            onsubmit={async () => {
+              refreshLeaderboard = !refreshLeaderboard;
+              return true;
+            }}><span class="icon-[mdi--refresh]"></span></Button>
+        </div>
       {/if}
 
       {#key refreshLeaderboard && refreshPR}

@@ -11,7 +11,7 @@
   let { leaderboards, selected = $bindable(), onclick = () => {} }: Props = $props();
 </script>
 
-<div class="flex overflow-hidden rounded-t-box">
+<div class="flex grow overflow-hidden rounded-t-box">
   {#each leaderboards as l}
     <button
       class="flex h-9 grow cursor-pointer items-center justify-center transition-all
