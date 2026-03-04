@@ -96,6 +96,7 @@
             <td>{request.kind}</td>
             <td>{request.content}</td>
             <td
+              class="cursor-pointer hover:underline"
               onclick={() => {
                 selectedPlayer = player;
                 // jump to top

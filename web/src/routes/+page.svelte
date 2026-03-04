@@ -5,6 +5,7 @@
   import Section from '$lib/components/layout/Section.svelte';
   import { ApiPaths } from '$lib/schema';
   import no_map from '$lib/assets/no_map.png';
+  import ExternalLink from '$lib/components/display/ExternalLink.svelte';
 
   let { data } = $props();
 </script>
@@ -12,7 +13,7 @@
 <div class="h-36 w-full">
   <div class="relative flex size-full overflow-hidden">
     {@render nomap()}
-    <div class="absolute z-10 flex flex-col px-3 pt-6">
+    <div class="absolute z-10 flex h-full flex-col px-3 pt-4 pb-2">
       <h2 class="text-lg text-primary">a home for some tf2 jump stuff</h2>
       {#if data.stats}
         <div class="flex gap-1">
@@ -22,6 +23,14 @@
           {data.stats.times_count} times
           <span class="text-content/75">for</span>
           {data.stats.player_count} players
+        </div>
+        <div class="mt-auto flex items-end gap-1 text-sm">
+          <span class="icon-[mdi--github] text-primary/75"></span>
+          <ExternalLink
+            label={'view development plans here'}
+            href="https://gist.github.com/spiritov/cb8b9b31ef2aa471e8f3a8dde4edee46"
+            newTab={true}
+            src="" />
         </div>
       {/if}
     </div>
