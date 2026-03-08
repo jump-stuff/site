@@ -7,7 +7,7 @@ declare global {
   namespace App {
     // interface Error {}
     interface Locals {
-      session: Promise<Session | undefined>;
+      session: Session | undefined;
     }
     interface PageData {
       session: Session | undefined;

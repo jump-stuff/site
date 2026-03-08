@@ -44,7 +44,6 @@
 
   $effect(() => {
     if (navigating.complete) {
-      console.log('calling increase');
       untrack(() => {
         isVisible = true;
         reset();
