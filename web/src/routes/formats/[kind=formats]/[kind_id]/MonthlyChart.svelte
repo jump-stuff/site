@@ -23,7 +23,7 @@
   const chartHeight = 140;
   const chartHeightWithoutPadding = chartHeight - chartPadding.y * 2;
   let chartWidth = $state(0); // NOTE: Waiting for this to propagate means the chart is partially rendered twice at the start (the intermediate state is not displayed).
-  const chartWidthWithoutPadding = $derived(chartWidth - 48);
+  const chartWidthWithoutPadding = $derived(chartWidth - chartPadding.x * 2);
   const animateInDurationMs = 800;
 
   const maxNameplateWidth = 120;
