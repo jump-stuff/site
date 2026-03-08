@@ -1,14 +1,7 @@
 <script lang="ts">
   import { Client } from '$lib/api/api';
   import EventHeader from '$lib/components/display/EventHeader.svelte';
-  import {
-    ApiPaths,
-    type Leaderboard,
-    type Player,
-    type Prize,
-    type TimeslotDatetimes,
-    type TimeWithPlayer
-  } from '$lib/schema';
+  import { ApiPaths, type Leaderboard, type Player, type TimeWithPlayer } from '$lib/schema';
   import { onMount } from 'svelte';
   import type { PageData } from './$types';
   import Table from '$lib/components/display/table/Table.svelte';
@@ -25,6 +18,9 @@
   import { Temporal } from 'temporal-polyfill';
   import LeaderboardButtons from '$lib/components/input/LeaderboardButtons.svelte';
   import TableSkeleton from '$lib/components/display/table/presets/TableSkeleton.svelte';
+  import MonthlyChart from './MonthlyChart.svelte';
+  import MonthlyChartSkeleton from './MonthlyChartSkeleton.svelte';
+  import PrizepoolSkeleton from './PrizepoolSkeleton.svelte';
 
   type Props = {
     data: PageData;
@@ -75,7 +71,20 @@
       }
     }
   });
+
+  let playerIdHighlighted: string | undefined = $state(undefined);
+  let chartPositionReferenceElement: HTMLDivElement | undefined = $state(undefined);
+  let isChartPoppedOut = $state(false);
+  const updateIsChartPoppedOut = () => {
+    if (!chartPositionReferenceElement) return;
+    const rect = chartPositionReferenceElement.getBoundingClientRect();
+    const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
+    isChartPoppedOut = !isVisible;
+  };
+  setTimeout(updateIsChartPoppedOut); // Pages can restore scroll position on load in some cases... I'm not sure it can happen here or if this would actually patch it, but some handling may be needed.
 </script>
+
+<svelte:document onscroll={updateIsChartPoppedOut} />
 
 {#if data.ewl}
   {@const prizepoolTotalPromise = Client.GET(ApiPaths.get_prizepool_total, {
@@ -95,7 +104,7 @@
       {/if}
     {/await}
   {:else}
-    {#await Client.GET( ApiPaths.get_prizepool_total, { params: { path: { event_id: data.ewl.event.id } } } )}
+    {#await prizepoolTotalPromise}
       <EventHeader event={data.ewl} />
     {:then { data: prizepoolTotal }}
       <EventHeader event={data.ewl} prizepool={prizepoolTotal} />
@@ -219,25 +228,43 @@
               }}><span class="icon-[mdi--refresh]"></span></Button>
           {/if}
         </div>
-        {#if showPrizepool}
-          {#await prizepoolTotalPromise}
-            <span></span>
-          {:then { data: prizepoolTotal }}
+      {/if}
+
+      {#if showPrizepool}
+        {#await prizepoolTotalPromise}
+          <PrizepoolSkeleton />
+        {:then { data: prizepoolTotal }}
+          <div class="my-0.5 bg-base-900/50 p-2">
             {#if prizepoolTotal?.total}
-              {#await Client.GET( ApiPaths.get_leaderboard_prizepool, { params: { path: { leaderboard_id: selectedLeaderboardID } } } )}
-                <TableSkeleton rows={1}></TableSkeleton>
-              {:then { data: prizepool }}
-                {#each prizepool as prize}
-                  <div class="flex w-full">
-                    <span class="min-w-12 pl-3 text-left text-primary">
-                      {formatPosition(prize.position)}</span>
-                    <span>{prize.keys}</span>
+              <Content>
+                {#await Client.GET( ApiPaths.get_leaderboard_prizepool, { params: { path: { leaderboard_id: selectedLeaderboardID } } } )}
+                  <span></span>
+                {:then { data: prizepool }}
+                  <div class="mx-auto flex w-fit flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                    {#each prizepool?.toReversed() as prize}
+                      <div
+                        class={[
+                          'flex px-2',
+                          {
+                            1: 'text-div-gold',
+                            2: 'text-div-silver',
+                            3: 'text-div-bronze'
+                          }[prize.position] ?? 'text-primary'
+                        ]}>
+                        <span class="rounded-box bg-base-900 px-3 text-left whitespace-nowrap"
+                          >{formatPosition(prize.position)}</span>
+                        <span class="ml-1.5 whitespace-nowrap"
+                          >{prize.keys} key{prize.keys === 1 ? '' : 's'}</span>
+                      </div>
+                    {/each}
                   </div>
-                {/each}
-              {/await}
+                {/await}
+              </Content>
+            {:else}
+              <div class="mx-auto w-fit opacity-65">no prizes offered</div>
             {/if}
-          {/await}
-        {/if}
+          </div>
+        {/await}
       {/if}
 
       {#key refreshLeaderboard && refreshPR}
@@ -247,9 +274,23 @@
           ? ApiPaths.get_motw_leaderboard_times
           : ApiPaths.get_leaderboard_times}
         {#await Client.GET( leaderboardPath, { params: { path: { leaderboard_id: selectedLeaderboardID } } } )}
-          <TableSkeleton rows={3}></TableSkeleton>
+          <MonthlyChartSkeleton />
+          <TableSkeleton rows={3} />
         {:then { data: times }}
-          <Table data={times ?? []}>
+          <div bind:this={chartPositionReferenceElement}></div>
+          <div
+            class={[
+              'z-20 bg-base-800',
+              isChartPoppedOut && 'sticky top-0 border-b-2 border-b-base-800'
+            ]}>
+            <MonthlyChart times={times ?? []} {playerIdHighlighted} />
+          </div>
+          <Table
+            data={(times ?? []).map((time) => ({
+              ...time,
+              onmouseover: () => (playerIdHighlighted = time.player.id),
+              onmouseout: () => (playerIdHighlighted = undefined)
+            }))}>
             {#snippet header()}
               <th class="w-rank"></th>
               <th class="w-time"></th>

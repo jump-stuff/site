@@ -2,7 +2,7 @@
   import type { Snippet } from 'svelte';
 
   type Props = {
-    data: object[];
+    data: (object & { onmouseover?: (e: Event) => void; onmouseout?: (e: Event) => void })[];
     header: Snippet;
     row: Snippet<[any, number]>;
   };
@@ -21,8 +21,12 @@
 
   <!-- rows -->
   <tbody>
-    {#each data as object, i}
-      <tr>
+    {#each data as object, i (i)}
+      <tr
+        onmouseover={object.onmouseover}
+        onfocus={object.onmouseover}
+        onmouseout={object.onmouseout}
+        onblur={object.onmouseout}>
         {@render row(object, i + 1)}
         <!-- <td>{content}</td> -->
       </tr>
