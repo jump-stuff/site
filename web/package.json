@@ -24,6 +24,8 @@
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.1.17",
     "@types/node": "^22",
+    "@types/three": "^0.183.1",
+    "@types/topojson-client": "^3.1.5",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-svelte": "^3.13.1",
@@ -41,8 +43,11 @@
   },
   "dependencies": {
     "@iconify-json/mdi": "^1.2.3",
+    "globe.gl": "^2.45.0",
     "nprogress": "^0.2.0",
     "openapi-fetch": "^0.15.0",
-    "temporal-polyfill": "^0.3.0"
+    "temporal-polyfill": "^0.3.0",
+    "three": "^0.183.2",
+    "topojson-client": "^3.1.0"
   }
 }
