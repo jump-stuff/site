@@ -168,7 +168,8 @@ func handleSteamCallback(ctx context.Context, input *CallbackInput) (*CallbackOu
 	// and finally, setting the session cookie with our session JWT!
 	return &CallbackOutput{
 		Status: http.StatusTemporaryRedirect,
-		Url:    "http://localhost:5173",
+		// TODO!!: NEEDS TO BE AN ENVIRONMENT VARIABLE!!!
+		Url: "http://localhost:5173",
 		SetCookie: http.Cookie{
 			Name:     SessionCookieName,
 			Path:     "/",
