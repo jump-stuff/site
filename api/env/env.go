@@ -82,24 +82,24 @@ func Load(envKey string) (err error) {
 		env = "development"
 	}
 
-	err = godotenv.Load("env/.env." + env + ".local")
+	err = godotenv.Load(".env." + env + ".local")
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return
 	}
 
 	if env != "test" {
-		err = godotenv.Load("env/.env.local")
+		err = godotenv.Load(".env.local")
 		if err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return
 		}
 	}
 
-	err = godotenv.Load("env/.env." + env)
+	err = godotenv.Load(".env." + env)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return
 	}
 
-	err = godotenv.Load("env/.env")
+	err = godotenv.Load(".env")
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return
 	}
