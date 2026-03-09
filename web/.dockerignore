@@ -1,26 +1,19 @@
-# flyctl launch added from .gitignore
-**\node_modules
-
-# Output
-**\.output
-**\.vercel
-**\.netlify
-**\.wrangler
-.svelte-kit
+node_modules
 build
+.svelte-kit
 
-# OS
-**\.DS_Store
-**\Thumbs.db
+# macos funny
+**/.DS_Store
+**/Thumbs.db
 
-# Env
-**\.env
-**\.env.*
-!**\.env.example
-!**\.env.test
-!**\.env.local.example
+# all dotenv files are ignored, except for a few which are MUST NOT contain secrets/credentials
+.env.*
+!.env.example
+!.env.*.example
+!.env.development
+!.env.test
+!.env.production
 
 # Vite
-**\vite.config.js.timestamp-*
-**\vite.config.ts.timestamp-*
-fly.toml
+**/vite.config.js.timestamp-*
+**/vite.config.ts.timestamp-*

@@ -1,23 +1,18 @@
 node_modules
+build
+.svelte-kit
 
-# Output
-.output
-.vercel
-.netlify
-.wrangler
-/.svelte-kit
-/build
-
-# OS
+# macos funny
 .DS_Store
 Thumbs.db
 
-# Env
-.env
+# all dotenv files are ignored, except for a few which are MUST NOT contain secrets/credentials
 .env.*
 !.env.example
+!.env.*.example
+!.env.development
 !.env.test
-!.env.local.example
+!.env.production
 
 # Vite
 vite.config.js.timestamp-*
