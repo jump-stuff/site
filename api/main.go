@@ -20,6 +20,7 @@ func main() {
 	}
 
 	env.Require(
+		"JUMP_DB_PATH",
 		"JUMP_SLOG_LEVEL",
 		"JUMP_SLOG_MODE",
 		"JUMP_HTTP_ADDRESS",
@@ -42,7 +43,8 @@ func main() {
 	}
 	slog.SetDefault(slogger.Logger)
 
-	database := db.OpenDB("./db/jump.db?_foreign_keys=on")
+	dbPath := env.GetString("JUMP_DB_PATH")
+	database := db.OpenDB(fmt.Sprintf("%s?_foreign_keys=on", dbPath))
 	defer database.Close()
 
 	var foreign_keys_enabled int
