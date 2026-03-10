@@ -5,11 +5,16 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/httplog/v3"
+	"github.com/jump-fortress/site/env"
 	"github.com/jump-fortress/site/internal/routes"
+	"github.com/jump-fortress/site/slogger"
+	"github.com/rotisserie/eris"
 	"github.com/rs/cors"
 )
 
@@ -23,8 +28,67 @@ var (
 	requireDevMiddlewares        huma.Middlewares
 )
 
-func setupRouter() *chi.Mux {
+func setupRouter() (*chi.Mux, error) {
+	// TUTORIAL: we're configuring our logger to always log in the ECS v9 schema.
+	//           this schema is easily consumed by many observability/telemetry tools.
+	logConcise := env.GetBool("JUMP_HTTPLOG_CONCISE")
+	logFormat := httplog.SchemaECS.Concise(logConcise)
+
+	logLevel, matchedErr := env.GetMapped("JUMP_HTTPLOG_LEVEL", slogger.SlogLevelMap)
+	if matchedErr != nil {
+		return nil, matchedErr
+	}
+
+	handlerOptions := &slog.HandlerOptions{
+		ReplaceAttr: logFormat.ReplaceAttr,
+		Level:       logLevel,
+	}
+
+	var logger *slog.Logger
+	slogMode := env.GetString("JUMP_HTTPLOG_MODE")
+	switch slogMode {
+	case "Text":
+		logger = slog.New(slog.NewTextHandler(os.Stdout, handlerOptions))
+	case "JSON":
+		logger = slog.New(slog.NewJSONHandler(os.Stdout, handlerOptions))
+	default:
+		return nil, eris.Errorf("invalid value for JUMP_HTTPLOG_Mode: %s", slogMode)
+	}
+
 	router := chi.NewMux()
+
+	options := &httplog.Options{
+		// Level defines the verbosity of the request logs:
+		// slog.LevelDebug - log all responses (incl. OPTIONS)
+		// slog.LevelInfo  - log responses (excl. OPTIONS)
+		// slog.LevelWarn  - log 4xx and 5xx responses only (except for 429)
+		// slog.LevelError - log 5xx responses only
+		Level: logLevel,
+
+		// Set log output to Elastic Common Schema (ECS) format.
+		Schema: logFormat,
+
+		// RecoverPanics recovers from panics occurring in the underlying HTTP handlers
+		// and middlewares. It returns HTTP 500 unless response status was already set.
+		//
+		// NOTE: Panics are logged as errors automatically, regardless of this setting.
+		RecoverPanics: true,
+
+		// Optionally, log selected request/response headers explicitly.
+		LogRequestHeaders:  env.GetList("JUMP_HTTPLOG_REQUEST_HEADERS"),
+		LogResponseHeaders: env.GetList("JUMP_HTTPLOG_RESPONSE_HEADERS"),
+	}
+
+	if env.GetBool("JUMP_HTTPLOG_REQUEST_BODIES") {
+		options.LogRequestBody = func(r *http.Request) bool { return true }
+	}
+
+	if env.GetBool("JUMP_HTTPLOG_RESPONSE_BODIES") {
+		options.LogResponseBody = func(r *http.Request) bool { return true }
+	}
+
+	// TUTORIAL: every request should get logged using our configured logger
+	router.Use(httplog.RequestLogger(logger, options))
 
 	// todo (spiritov): use strict `AllowedOrigins`
 	// todo (spiritov): use CSRF middleware (?)
@@ -35,7 +99,7 @@ func setupRouter() *chi.Mux {
 		AllowedOrigins:   []string{"*"}, // default value
 	}).Handler)
 
-	return router
+	return router, nil
 }
 
 func setupHumaConfig() huma.Config {
@@ -72,13 +136,17 @@ func registerHealthCheck(internalApi *huma.Group) {
 }
 
 func ServeAPI(address string) {
-	router := setupRouter()
+	router, err := setupRouter()
+	if err != nil {
+		slog.Error("failed to setup router", "error", err)
+		log.Fatal()
+	}
 	config := setupHumaConfig()
 	api = humachi.New(router, config)
 
 	registerRoutes()
 
-	err := http.ListenAndServe(address, router)
+	err = http.ListenAndServe(address, router)
 	if err != nil {
 		slog.Error("failed to serve api", "error", err)
 		log.Fatal()

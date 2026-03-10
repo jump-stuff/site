@@ -14,6 +14,7 @@ require github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 require (
 	github.com/escrow-tf/steam v0.0.0-20251105072554-5d32165389d1
 	github.com/go-chi/chi/v5 v5.2.4 // indirect
+	github.com/go-chi/httplog/v3 v3.3.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/hashicorp/go-retryablehttp v0.7.8

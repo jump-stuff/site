@@ -165,11 +165,12 @@ func handleSteamCallback(ctx context.Context, input *CallbackInput) (*CallbackOu
 		return nil, eris.Wrap(jwtErr, "Error creating new session")
 	}
 
+	callbackUrl := env.GetString("JUMP_OID_CALLBACK_URL")
+
 	// and finally, setting the session cookie with our session JWT!
 	return &CallbackOutput{
 		Status: http.StatusTemporaryRedirect,
-		// TODO!!: NEEDS TO BE AN ENVIRONMENT VARIABLE!!!
-		Url: "http://localhost:5173",
+		Url:    callbackUrl,
 		SetCookie: http.Cookie{
 			Name:     SessionCookieName,
 			Path:     "/",

@@ -35,6 +35,7 @@ func main() {
 		"JUMP_SESSION_COOKIE_SECURE",
 		"JUMP_STEAM_API_KEY",
 		"JUMP_OID_REALM",
+		"JUMP_OID_CALLBACK_URL",
 	)
 
 	err = slogger.Setup()
