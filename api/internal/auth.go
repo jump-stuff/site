@@ -31,7 +31,7 @@ const (
 	SessionJitter   = time.Minute
 
 	SteamOidcIssuer      = "https://steamcommunity.com/openid/"
-	SteamOidRedirectPath = "internal/steam/callback"
+	SteamOidRedirectPath = "signin/callback"
 )
 
 var (
@@ -53,9 +53,12 @@ func (d *DiscoverInput) Resolve(ctx huma.Context) []error {
 	return nil
 }
 
+type Discover struct {
+	Url string `json:"url"`
+}
+
 type DiscoverOutput struct {
-	Status int
-	Url    string `header:"Location"`
+	Body Discover
 }
 
 func handleSteamDiscover(ctx context.Context, input *DiscoverInput) (*DiscoverOutput, error) {
@@ -67,37 +70,53 @@ func handleSteamDiscover(ctx context.Context, input *DiscoverInput) (*DiscoverOu
 	}
 
 	return &DiscoverOutput{
-		Status: http.StatusTemporaryRedirect,
-		Url:    redirectUrl,
+		Body: Discover{
+			Url: redirectUrl,
+		},
 	}, nil
 }
 
 type CallbackInput struct {
-	URL url.URL
+	Ns            string `query:"openid.ns"`
+	Mode          string `query:"openid.mode"`
+	OpEndpoint    string `query:"openid.op_endpoint"`
+	ClaimedId     string `query:"openid.claimed_id"`
+	Identity      string `query:"openid.identity"`
+	ReturnTo      string `query:"openid.return_to"`
+	ResponseNonce string `query:"openid.response_nonce"`
+	AssocHandle   string `query:"openid.assoc_handle"`
+	Signed        string `query:"openid.signed"`
+	Sig           string `query:"openid.sig"`
 }
 
-func (d *CallbackInput) Resolve(ctx huma.Context) []error {
-	d.URL = ctx.URL()
-	return nil
+type Callback struct {
+	JWT string `json:"jwt"`
 }
 
 type CallbackOutput struct {
-	Status    int
-	Url       string      `header:"Location"`
-	SetCookie http.Cookie `header:"Set-Cookie"`
+	Body Callback
 }
 
 func handleSteamCallback(ctx context.Context, input *CallbackInput) (*CallbackOutput, error) {
 	// our openid library verifies that the original request came from our authority, but it needs us to
 	// provide a URL to verify that the incoming callback request has the authority we expect. Here we're
 	// just replacing the `https://blahblah.com` part of the URL with our OidRealm
-	inputURL := input.URL
-	fullURL := OidRealmURL.JoinPath(inputURL.Path)
-	fullURL.RawQuery = inputURL.RawQuery
+
+	fmt.Printf("input openidurl: %v\n", input.OpenIDURL)
+
+	inputUrl, urlErr := url.Parse(input.OpenIDURL)
+	if urlErr != nil {
+		return nil, eris.Wrap(urlErr, "error parsing openid URL")
+	}
+
+	fullURL := OidRealmURL.JoinPath(inputUrl.Path)
+	fullURL.RawQuery = inputUrl.RawQuery
 
 	// verify the openid callback. The discovery cache caches some response information to make verification
 	// faster if the callback is hit with the same user again. The nonce store ensures that a callback request
 	// is never processed by our servers more than once.
+
+	fmt.Printf("fullurl: %v\n", fullURL.String())
 	id, err := openid.Verify(fullURL.String(), discoveryCache, db.NewNonceStore(ctx, db.Queries))
 	if err != nil {
 		slog.Debug("Error verifying openid callback", "error", err, "uri", fullURL)
@@ -165,22 +184,24 @@ func handleSteamCallback(ctx context.Context, input *CallbackInput) (*CallbackOu
 		return nil, eris.Wrap(jwtErr, "Error creating new session")
 	}
 
-	callbackUrl := env.GetString("JUMP_OID_CALLBACK_URL")
+	// todo: callback to url from signin
+	// callbackUrl := env.GetString("JUMP_OID_CALLBACK_URL")
 
 	// and finally, setting the session cookie with our session JWT!
 	return &CallbackOutput{
-		Status: http.StatusTemporaryRedirect,
-		Url:    callbackUrl,
-		SetCookie: http.Cookie{
-			Name:     SessionCookieName,
-			Path:     "/",
-			Value:    signedJwt,
-			MaxAge:   int(expiresAt.Sub(time.Now().UTC()).Seconds()),
-			Expires:  expiresAt,
-			Secure:   SessionCookieSecure,
-			SameSite: http.SameSiteStrictMode,
-		},
-	}, nil
+		//Status: http.StatusTemporaryRedirect,
+		//Url:    callbackUrl,
+		//SetCookie: http.Cookie{
+		//	Name:     SessionCookieName,
+		//	Path:     "/",
+		//	Value:    signedJwt,
+		//	MaxAge:   int(expiresAt.Sub(time.Now().UTC()).Seconds()),
+		//	Expires:  expiresAt,
+		//	Secure:   SessionCookieSecure,
+		//	SameSite: http.SameSiteStrictMode,
+		Body: Callback{
+			JWT: signedJwt,
+		}}, nil
 }
 
 type SignOutOutput struct {

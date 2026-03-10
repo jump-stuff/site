@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { browser } from '$app/environment';
   import { goto, invalidateAll } from '$app/navigation';
   import { Client } from '$lib/api/api';
   import { ApiPaths } from '$lib/schema';
@@ -7,7 +8,7 @@
     const { error } = await Client.POST(ApiPaths.sign_out, {
       fetch: fetch
     });
-    if (!error) {
+    if (!error && browser) {
       invalidateAll();
       goto('/');
     } else {

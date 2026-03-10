@@ -21,7 +21,7 @@
     <hr class="relative left-1/24 my-px w-11/12 text-base-700" />
   {/if}
   {@render page('settings', '/settings')}
-  {@render page('logout', '/logout')}
+  {@render page('logout', '/signout')}
 </div>
 
 {#snippet page(label: string, href: string)}

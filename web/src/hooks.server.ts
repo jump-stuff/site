@@ -8,7 +8,8 @@ export const handle: Handle = async ({ event, resolve }) => {
   // internal api request
   if (event.url.pathname.startsWith('/internal')) {
     let url = new URL(event.url.pathname, config.apiBaseUrl);
-
+    url.search = event.url.search;
+    console.log('internal hook new url: ', url);
     const result = await fetch(url, {
       ...event.request,
       redirect: 'manual'
