@@ -31,15 +31,14 @@ const (
 	SessionJitter   = time.Minute
 
 	SteamOidcIssuer      = "https://steamcommunity.com/openid/"
-	SteamOidRedirectPath = "signin/callback"
+	SteamOidRedirectPath = "/steam/callback"
 )
 
 var (
-	SessionTokenSecret  []byte
-	SessionCookieSecure = false
-	OidRealm            string
-	OidRealmURL         *url.URL
-	SteamApiKey         string
+	SessionTokenSecret []byte
+	OidRealm           string
+	OidRealmURL        *url.URL
+	SteamApiKey        string
 
 	discoveryCache *NoOpDiscoveryCache
 )
@@ -64,6 +63,7 @@ type DiscoverOutput struct {
 func handleSteamDiscover(ctx context.Context, input *DiscoverInput) (*DiscoverOutput, error) {
 	callbackURL := OidRealmURL.JoinPath(SteamOidRedirectPath)
 	redirectUrl, err := openid.RedirectURL(SteamOidcIssuer, callbackURL.String(), OidRealm)
+
 	if err != nil {
 		slog.Error("couldn't create openid redirect", "error", err)
 		return nil, err
@@ -90,7 +90,9 @@ type CallbackInput struct {
 }
 
 type Callback struct {
-	JWT string `json:"jwt"`
+	SessionToken string    `json:"sessionToken"`
+	MaxAge       int       `json:"maxAge"`
+	Expires      time.Time `json:"expiresAt"`
 }
 
 type CallbackOutput struct {
@@ -128,7 +130,6 @@ func handleSteamCallback(ctx context.Context, input *CallbackInput) (*CallbackOu
 	// faster if the callback is hit with the same user again. The nonce store ensures that a callback request
 	// is never processed by our servers more than once.
 
-	fmt.Printf("fullurl: %v\n", fullURL.String())
 	id, err := openid.Verify(fullURL.String(), discoveryCache, db.NewNonceStore(ctx, db.Queries))
 	if err != nil {
 		slog.Debug("Error verifying openid callback", "error", err, "uri", fullURL)
@@ -204,15 +205,10 @@ func handleSteamCallback(ctx context.Context, input *CallbackInput) (*CallbackOu
 		//Status: http.StatusTemporaryRedirect,
 		//Url:    callbackUrl,
 		//SetCookie: http.Cookie{
-		//	Name:     SessionCookieName,
-		//	Path:     "/",
-		//	Value:    signedJwt,
-		//	MaxAge:   int(expiresAt.Sub(time.Now().UTC()).Seconds()),
-		//	Expires:  expiresAt,
-		//	Secure:   SessionCookieSecure,
-		//	SameSite: http.SameSiteStrictMode,
 		Body: Callback{
-			JWT: signedJwt,
+			SessionToken: signedJwt,
+			MaxAge:       int(expiresAt.Sub(time.Now().UTC()).Seconds()),
+			Expires:      expiresAt,
 		}}, nil
 }
 
@@ -243,7 +239,7 @@ func handleSteamSignOut(ctx context.Context, _ *struct{}) (*SignOutOutput, error
 			Value:    "",
 			MaxAge:   0,
 			Expires:  time.Now(),
-			Secure:   SessionCookieSecure,
+			Secure:   false,
 			SameSite: http.SameSiteStrictMode,
 		},
 	}, nil
@@ -258,7 +254,6 @@ func registerAuth(internalApi *huma.Group, sessionApi *huma.Group) {
 
 	OidRealmURL = oidRealmURL
 	SessionTokenSecret = []byte(env.GetString("JUMP_SESSION_TOKEN_SECRET"))
-	SessionCookieSecure = env.GetBool("JUMP_SESSION_COOKIE_SECURE")
 	SteamApiKey = env.GetString("JUMP_STEAM_API_KEY")
 
 	// the OpenID flow works like this:

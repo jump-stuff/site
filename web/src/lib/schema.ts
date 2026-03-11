@@ -1072,7 +1072,11 @@ export interface components {
              * @example https://example.com/schemas/Callback.json
              */
             readonly $schema?: string;
-            jwt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: int64 */
+            maxAge: number;
+            sessionToken: string;
         };
         Discover: {
             /**
