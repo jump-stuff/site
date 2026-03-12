@@ -959,13 +959,13 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    get?: never;
-    put?: never;
     /**
      * sign out
      * @description sign out & clear session
      */
-    post: operations['sign-out'];
+    get: operations['sign-out'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -2862,13 +2862,14 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description No Content */
-      204: {
+      /** @description OK */
+      200: {
         headers: {
-          'Set-Cookie'?: string;
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          'application/json': components['schemas']['Callback'];
+        };
       };
       /** @description Unauthorized */
       401: {
