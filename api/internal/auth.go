@@ -213,7 +213,7 @@ func handleSteamCallback(ctx context.Context, input *CallbackInput) (*CallbackOu
 }
 
 type SignOutOutput struct {
-	SetCookie http.Cookie `header:"Set-Cookie"`
+	Body Callback
 }
 
 func handleSteamSignOut(ctx context.Context, _ *struct{}) (*SignOutOutput, error) {
@@ -233,16 +233,20 @@ func handleSteamSignOut(ctx context.Context, _ *struct{}) (*SignOutOutput, error
 
 	// then we expire their session cookie.
 	return &SignOutOutput{
-		SetCookie: http.Cookie{
-			Name:     SessionCookieName,
-			Path:     "/",
-			Value:    "",
-			MaxAge:   0,
-			Expires:  time.Now(),
-			Secure:   false,
-			SameSite: http.SameSiteStrictMode,
-		},
-	}, nil
+		Body: Callback{
+			SessionToken: "",
+			MaxAge:       0,
+			Expires:      time.Now(),
+		}}, nil
+	//SetCookie: http.Cookie{
+	//	Name:     SessionCookieName,
+	//	Path:     "/",
+	//	Value:    "",
+	//	MaxAge:   0,
+	//	Expires:  time.Now(),
+	//	Secure:   false,
+	//	SameSite: http.SameSiteStrictMode,
+	//}, nil
 }
 
 func registerAuth(internalApi *huma.Group, sessionApi *huma.Group) {
@@ -307,7 +311,7 @@ func registerAuth(internalApi *huma.Group, sessionApi *huma.Group) {
 	// }, HandleGetSession)
 
 	huma.Register(sessionApi, huma.Operation{
-		Method:      http.MethodPost,
+		Method:      http.MethodGet,
 		Path:        "/sign-out",
 		OperationID: "sign-out",
 		Summary:     "sign out",

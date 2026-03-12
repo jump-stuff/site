@@ -14,3 +14,5 @@
 
   handleSignin();
 </script>
+
+redirecting to Steam..
