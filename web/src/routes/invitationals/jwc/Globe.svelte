@@ -25,7 +25,7 @@
           globeJWC
             //@ts-ignore
             .polygonsData(topojson.feature(landTopo, landTopo.objects.land).features)
-            .polygonCapMaterial(new MeshLambertMaterial({ color: '#70709D', side: FrontSide }))
+            .polygonCapMaterial(new MeshLambertMaterial({ color: '#70709D', side: DoubleSide }))
             .polygonSideColor(() => 'rgba(0,0,0,0)');
         });
 
