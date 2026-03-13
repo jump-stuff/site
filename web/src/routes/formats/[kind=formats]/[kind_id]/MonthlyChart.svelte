@@ -5,6 +5,8 @@
  * Potentially highlight table from chart hover.
  * Support half and quarter second tick time steps.
  * Hide hover stems during initial animation.
+ * Fix mobile drag actions (context menu and page move).
+ * Fix when no space for horizontal outliers to grow.
 -->
 
 <script lang="ts">
