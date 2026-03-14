@@ -46,6 +46,7 @@
   "dependencies": {
     "@iconify-json/mdi": "^1.2.3",
     "@sveltejs/adapter-node": "^5.5.4",
+    "canvas-confetti": "^1.9.4",
     "globe.gl": "^2.45.0",
     "nprogress": "^0.2.0",
     "openapi-fetch": "^0.15.0",

@@ -15,6 +15,21 @@
   src: url('$lib/assets/fonts/chivo-mono/static/ChivoMono-Regular.ttf') format('truetype');
 }
 
+@font-face {
+  font-family: tf2secondary;
+  src: url('$lib/assets/fonts/tf2secondary.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: tf2build;
+  src: url('$lib/assets/fonts/tf2build.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: delta;
+  src: url('$lib/assets/fonts/delta.ttf') format('truetype');
+}
+
 @theme {
   --color-*: initial;
   /* tailwind colors */
@@ -29,6 +44,9 @@
 
   --font-theme: 'fredoka', 'ui-sans-serif', 'sans-serif', 'system-ui';
   --font-mono: 'chivomono', 'ui-sans-serif', 'sans-serif', 'system-ui';
+  --font-tf2secondary: 'tf2secondary', 'ui-sans-serif', 'sans-serif', 'system-ui';
+  --font-tf2build: 'tf2build', 'ui-sans-serif', 'sans-serif', 'system-ui';
+  --font-delta: 'delta', serif;
 
   /* 0.75rem for rounded-xl */
   --radius-layout: 0.5rem;

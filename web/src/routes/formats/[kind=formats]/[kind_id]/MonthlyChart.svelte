@@ -7,6 +7,7 @@
  * Hide hover stems during initial animation.
  * Fix mobile drag actions (context menu and page move).
  * Fix when no space for horizontal outliers to grow.
+ * Honor reduced motion.
 -->
 
 <script lang="ts">
@@ -29,10 +30,12 @@
   const animateInDurationMs = 800;
 
   const maxNameplateWidth = 120;
-  const iconSize = (position: number) => (position <= 3 ? 32 : position <= 10 ? 24 : 10);
-  const iconStyle = (position: number) => (position <= 10 ? 'avatar' : 'dot');
-  const iconSizeWithRing = (position: number) =>
-    iconSize(position) + (iconStyle(position) === 'avatar' ? 9 : 1);
+  const iconSize = (position: number, alias: string) =>
+    alias === 'mur' || position <= 3 ? 32 : position <= 10 ? 24 : 10;
+  const iconStyle = (position: number, alias: string) =>
+    alias === 'mur' || position <= 10 ? 'avatar' : 'dot';
+  const iconSizeWithRing = (position: number, alias: string) =>
+    iconSize(position, alias) + (iconStyle(position, alias) === 'avatar' ? 9 : 1);
   const iconFloorYoffset = 30;
   const tickLabelWidth = 40 * 3; // TODO: The text is about 40... the multiplier is adjusted arbitrarily for now to produce ok results. This needs investigation.
 
@@ -86,8 +89,10 @@
 
       let y = 0;
       const distToPrevious = Math.abs(x - (positions[i - 1]?.x ?? Number.MIN_SAFE_INTEGER));
-      const previousIconSize = times[i - 1] ? iconSizeWithRing(times[i - 1]!.position) : 0;
-      const currentIconSize = iconSizeWithRing(entry.position);
+      const previousIconSize = times[i - 1]
+        ? iconSizeWithRing(times[i - 1]!.position, entry.player.alias)
+        : 0;
+      const currentIconSize = iconSizeWithRing(entry.position, entry.player.alias);
       // TODO: I thought this should be (previousIconSize + currentIconSize) / 2 for all, but just previousIconSize is producing the desired results.
       if (distToPrevious < (previousIconSize + currentIconSize) / 2) {
         y =
@@ -103,7 +108,7 @@
     return positions.map(({ x, y }) => ({ x, y: y + chartPadding.y + iconFloorYoffset })); // Internal relative sizes convenient for shifting --> absolute for the chart interior.
   });
 
-  const highlightDistance = iconSize(1) / 2;
+  const highlightDistance = iconSize(1, '') / 2;
   const playerIdsHighlighted = $derived.by(() => {
     if (cursorX === undefined || times.length === 0) {
       return playerIdHighlighted ? [playerIdHighlighted] : [];
@@ -188,6 +193,7 @@
       <div
         class={[
           'group absolute flex flex-col items-center justify-center gap-1 font-mono text-xs',
+          entry.player.alias === 'mur' && 'animate-[color-party_7s_infinite,float_5s_infinite]',
           { 1: 'text-div-gold', 2: 'text-div-silver', 3: 'text-div-bronze' }[entry.position] ??
             'text-content',
           hoverState === 'other-hovered' && 'brightness-50 contrast-90',
@@ -200,7 +206,7 @@
         style:bottom="{y}px"
         style:left="{(xExtensionAboveRange ? xExtensionAboveRange : x) +
           chartPadding.x -
-          iconSize(entry.position) / 2}px"
+          iconSize(entry.position, entry.player.alias) / 2}px"
         style:z-index={// z-index cleverness is done to pop hovered times to the top, sort faster times on top, but also sort the stack vertically for ties.
         10 +
           Math.floor(y) +
@@ -208,7 +214,8 @@
           (hoverState === 'hovered' ? chartHeightWithoutPadding * chartWidthWithoutPadding : 0)}
         in:fly|global={{
           delay:
-            ((x + chartPadding.x - iconSize(entry.position) / 2) / chartWidthWithoutPadding) *
+            ((x + chartPadding.x - iconSize(entry.position, entry.player.alias) / 2) /
+              chartWidthWithoutPadding) *
             (animateInDurationMs / 2),
           y: 10,
           duration: animateInDurationMs / 2
@@ -218,28 +225,37 @@
           <div
             class="pointer-events-none absolute -mt-11.5 ml-4.5 rotate-20 text-lg filter-[drop-shadow(0px_0px_1px_var(--color-base-900))_drop-shadow(0px_0px_1px_var(--color-base-900))] before:icon-[mdi--crown-outline]">
           </div>
+        {:else if entry.player.alias === 'mur'}
+          <div
+            class="pointer-events-none absolute -mt-14.5 ml-5.5 animate-[float_5s_infinite] text-3xl text-success filter-[drop-shadow(0px_0px_1px_var(--color-base-900))_drop-shadow(0px_0px_1px_var(--color-base-900))] before:icon-[mdi--balloon]">
+          </div>
+          <div
+            class="pointer-events-none absolute -mt-12 -ml-4.5 animate-[float_7s_infinite] text-3xl text-success filter-[drop-shadow(0px_0px_1px_var(--color-base-900))_drop-shadow(0px_0px_1px_var(--color-base-900))] before:icon-[mdi--balloon]">
+          </div>
         {/if}
 
         <!-- Main icon. -->
         <div
           class={[
             'relative overflow-hidden rounded-full',
-            {
-              1: 'bg-base-800 shadow-[0px_0px_10px_2px_var(--color-div-gold)] ring-2 shadow-div-gold ring-div-gold ring-offset-2 ring-offset-base-900',
-              2: 'bg-base-800 shadow-[0px_0px_9px_2px_var(--color-div-silver)] ring-2 shadow-div-gold ring-div-silver ring-offset-2 ring-offset-base-900',
-              3: 'bg-base-800 shadow-[0px_0px_8px_2px_var(--color-div-bronze)] ring-2 shadow-div-gold ring-div-bronze ring-offset-2 ring-offset-base-900'
-            }[entry.position] ??
-              (iconStyle(entry.position) === 'avatar'
-                ? isAboveRange
-                  ? 'bg-base-800 ring-2 ring-error ring-offset-2 ring-offset-base-900'
-                  : 'bg-base-800 ring-2 ring-[color-mix(in_oklab,var(--color-content),var(--color-base-900)_15%)] ring-offset-2 ring-offset-base-900'
-                : isAboveRange
-                  ? 'bg-error'
-                  : 'bg-content')
+            entry.player.alias === 'mur'
+              ? 'bg-base-800 shadow-[0px_0px_12px_2px_var(--color-success)] ring-2 shadow-success ring-success ring-offset-2 ring-offset-base-900'
+              : ({
+                  1: 'bg-base-800 shadow-[0px_0px_10px_2px_var(--color-div-gold)] ring-2 shadow-div-gold ring-div-gold ring-offset-2 ring-offset-base-900',
+                  2: 'bg-base-800 shadow-[0px_0px_9px_2px_var(--color-div-silver)] ring-2 shadow-div-gold ring-div-silver ring-offset-2 ring-offset-base-900',
+                  3: 'bg-base-800 shadow-[0px_0px_8px_2px_var(--color-div-bronze)] ring-2 shadow-div-gold ring-div-bronze ring-offset-2 ring-offset-base-900'
+                }[entry.position] ??
+                (iconStyle(entry.position, entry.player.alias) === 'avatar'
+                  ? isAboveRange
+                    ? 'bg-base-800 ring-2 ring-error ring-offset-2 ring-offset-base-900'
+                    : 'bg-base-800 ring-2 ring-[color-mix(in_oklab,var(--color-content),var(--color-base-900)_15%)] ring-offset-2 ring-offset-base-900'
+                  : isAboveRange
+                    ? 'bg-error'
+                    : 'bg-content'))
           ]}
-          style:width="{iconSize(entry.position)}px"
-          style:height="{iconSize(entry.position)}px">
-          {#if iconStyle(entry.position) === 'avatar'}
+          style:width="{iconSize(entry.position, entry.player.alias)}px"
+          style:height="{iconSize(entry.position, entry.player.alias)}px">
+          {#if iconStyle(entry.position, entry.player.alias) === 'avatar'}
             <img
               src={entry.player.avatar_url}
               alt={entry.player.alias}
@@ -271,7 +287,8 @@
           <!-- TODO: Could prevent these from going off the chart edges horizontally too. -->
           <div
             class="pointer-events-none absolute flex justify-center overflow-hidden"
-            style:margin-bottom="{(iconSizeWithRing(entry.position) + nameplateHeight) *
+            style:margin-bottom="{(iconSizeWithRing(entry.position, entry.player.alias) +
+              nameplateHeight) *
               (y > chartHeightWithoutPadding - nameplateHeight ? -1 : 1)}px"
             style:width="{maxNameplateWidth}px">
             <div
@@ -294,7 +311,7 @@
           class="absolute bottom-5.5 border-r border-r-base-700"
           style:top="{chartHeightWithoutPadding -
             y +
-            iconSize(entry.position) / 2 + // TODO: This isn't calculated quite right but... you can't tell for now.
+            iconSize(entry.position, entry.player.alias) / 2 + // TODO: This isn't calculated quite right but... you can't tell for now.
             chartPadding.y}px"
           style:left="{x + chartPadding.x}px">
         </div>
@@ -361,3 +378,29 @@
     <div class="flex items-center justify-center opacity-65">no times submitted</div>
   {/if}
 </div>
+
+<style lang="postcss">
+  @keyframes -global-float {
+    0%,
+    100% {
+      transform: translateY(-5%);
+      animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+    50% {
+      transform: none;
+      animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+  }
+
+  @keyframes -global-color-party {
+    0% {
+      filter: hue-rotate(0deg);
+    }
+    50% {
+      filter: hue-rotate(180deg);
+    }
+    100% {
+      filter: hue-rotate(360deg);
+    }
+  }
+</style>

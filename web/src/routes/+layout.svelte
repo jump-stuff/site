@@ -18,21 +18,25 @@
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
-<NavigationProgress />
+{#if !page.url.pathname.startsWith('/secret')}
+  <NavigationProgress />
 
-<div class="pointer-events-none flex justify-center">
-  <div class="pointer-events-auto flex w-full max-w-5xl flex-col gap-1 bg-base-900">
-    <Nav session={data.session} />
-    <main class="relative z-10 flex flex-col bg-base-800 pb-3">
-      {@render children()}
-    </main>
+  <div class="pointer-events-none flex justify-center">
+    <div class="pointer-events-auto flex w-full max-w-5xl flex-col gap-1 bg-base-900">
+      <Nav session={data.session} />
+      <main class="relative z-10 flex flex-col bg-base-800 pb-3">
+        {@render children()}
+      </main>
+    </div>
   </div>
-</div>
 
-<div class="fixed -bottom-36 -left-36">
-  {#if page.url.pathname.startsWith('/invitationals/jwc')}
-    <Globe />
-  {:else}
-    <Logo />
-  {/if}
-</div>
+  <div class="fixed -bottom-36 -left-36">
+    {#if page.url.pathname.startsWith('/invitationals/jwc')}
+      <Globe />
+    {:else}
+      <Logo />
+    {/if}
+  </div>
+{:else}
+  {@render children()}
+{/if}
