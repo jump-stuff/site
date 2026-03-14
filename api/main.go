@@ -1,14 +1,22 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"log/slog"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"github.com/jump-fortress/site/db"
 	"github.com/jump-fortress/site/env"
 	"github.com/jump-fortress/site/internal"
 	"github.com/jump-fortress/site/slogger"
+	"github.com/jump-fortress/site/tasks"
+	"github.com/jump-fortress/site/tasks/client"
+	"github.com/jump-fortress/site/tasks/workers"
 )
 
 func main() {
@@ -35,6 +43,10 @@ func main() {
 		"JUMP_STEAM_API_KEY",
 		"JUMP_OID_REALM",
 		"JUMP_OID_CALLBACK_URL",
+		"JUMP_UPSTASH_REDIS_REST_URL",
+		"JUMP_UPSTASH_REDIS_REST_PASS",
+		"JUMP_WEBHOOK_TEST_URL",
+		"JUMP_WEBHOOK_EVENTS_URL",
 	)
 
 	err = slogger.Setup()
@@ -53,6 +65,33 @@ func main() {
 
 	slog.Info("db up")
 
+	// catch exit signal to stop api & tasks
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	defer cancel()
+
+	var wg sync.WaitGroup
+
+	// serve api
 	address := env.GetString("JUMP_HTTP_ADDRESS")
-	internal.ServeAPI(address)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		internal.ServeAPI(ctx, address)
+	}()
+	slog.Info("serving api", "address", address)
+
+	// task handling
+	tasks.InitWebhookUrls()
+	client.ServeTaskClient()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		workers.ServeWorker(ctx)
+	}()
+	slog.Info("task worker up")
+
+	// exit
+	<-ctx.Done()
+	wg.Wait()
+	slog.Info("exit")
 }
