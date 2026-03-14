@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
@@ -135,7 +136,7 @@ func registerHealthCheck(internalApi *huma.Group) {
 	})
 }
 
-func ServeAPI(address string) {
+func ServeAPI(ctx context.Context, address string) {
 	router, err := setupRouter()
 	if err != nil {
 		slog.Error("failed to setup router", "error", err)
@@ -146,13 +147,25 @@ func ServeAPI(address string) {
 
 	registerRoutes()
 
-	err = http.ListenAndServe(address, router)
-	if err != nil {
-		slog.Error("failed to serve api", "error", err)
-		log.Fatal()
+	server := &http.Server{
+		Addr:    address,
+		Handler: router,
 	}
 
-	slog.Info("serving api", "address", address)
+	go func() {
+		err = server.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
+			slog.Error("failed to serve api", "error", err)
+			log.Fatal()
+		}
+	}()
+
+	// done
+	<-ctx.Done()
+	doneCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	server.Shutdown(doneCtx)
+	slog.Info("api shutdown")
 }
 
 func registerRoutes() {
