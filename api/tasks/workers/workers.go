@@ -19,7 +19,7 @@ func ServeWorker(ctx context.Context) {
 			Addr:     redisAddress,
 			Password: redisPass,
 			DB:       0},
-		asynq.Config{Concurrency: 0, TaskCheckInterval: time.Minute, HealthCheckInterval: time.Minute * 5, DelayedTaskCheckInterval: time.Second * 30, JanitorInterval: time.Hour, JanitorBatchSize: 5},
+		asynq.Config{Concurrency: 0, TaskCheckInterval: time.Minute, HealthCheckInterval: time.Minute * 15, DelayedTaskCheckInterval: time.Minute, JanitorInterval: time.Hour, JanitorBatchSize: 5},
 	)
 
 	mux := asynq.NewServeMux()

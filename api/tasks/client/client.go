@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/hibiken/asynq"
@@ -8,10 +9,22 @@ import (
 	"github.com/jump-fortress/site/tasks"
 )
 
+var (
+	taskClient *asynq.Client
+)
+
+func QueueTask(t *asynq.Task, tID string) {
+	info, err := taskClient.Enqueue(t, asynq.TaskID(tID))
+	if err != nil {
+		slog.Error(fmt.Sprintf("couldn't enqueue %s task", tID), "error", err)
+	}
+	slog.Info(fmt.Sprintf("enqueued %s task", tID), "info", info)
+}
+
 func ServeTaskClient() {
 	redisAddress := env.GetString("JUMP_UPSTASH_REDIS_REST_URL")
 	redisPass := env.GetString("JUMP_UPSTASH_REDIS_REST_PASS")
-	taskClient := asynq.NewClient(asynq.RedisClientOpt{
+	taskClient = asynq.NewClient(asynq.RedisClientOpt{
 		Addr:     redisAddress,
 		Password: redisPass,
 		DB:       0,
@@ -22,9 +35,5 @@ func ServeTaskClient() {
 		slog.Error("couldn't create ready task", "error", err)
 	}
 
-	info, err := taskClient.Enqueue(readyTask, asynq.TaskID("ready"))
-	if err != nil {
-		slog.Error("couldn't enqueue ready task", "error", err)
-	}
-	slog.Info("enqueued ready task", "info", info)
+	QueueTask(readyTask, "ready")
 }
