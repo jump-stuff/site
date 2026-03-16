@@ -39,6 +39,7 @@ var (
 
 	ColorDecimalContent = "13489908"
 	ColorDecimalPrimary = "11845374"
+	ColorTempus         = "16744192" // default orange
 
 	DefaultImage = "https://files.catbox.moe/s1ounn.png"
 
@@ -60,6 +61,10 @@ type eventMessagePayload struct {
 
 type playerPayload struct {
 	Player queries.Player
+}
+
+type requestPayload struct {
+	Payload models.RequestWithPlayer
 }
 
 func roleMention(eventName string) string {
@@ -106,6 +111,8 @@ func HandleWebhookReadyTask(ctx context.Context, t *asynq.Task) error {
 	}
 	return nil
 }
+
+// events
 
 func NewEventVisibleTask(ewl models.EventWithLeaderboards) (*asynq.Task, error) {
 	payload, err := json.Marshal(eventMessagePayload{
@@ -281,6 +288,8 @@ func NewPlayerSetTempusIDTask(player queries.Player) (*asynq.Task, error) {
 	return asynq.NewTask(TypeEventEnded, payload), nil
 }
 
+// players
+
 func HandleNewPlayerSetTempusIDTask(ctx context.Context, t asynq.Task) error {
 	var p playerPayload
 	err := json.Unmarshal(t.Payload(), &p)
@@ -289,22 +298,75 @@ func HandleNewPlayerSetTempusIDTask(ctx context.Context, t asynq.Task) error {
 	}
 
 	// fill message fields
-	content := "a player set their Tempus ID"
+	content := "A player set their Tempus ID"
 	embeds := []discordwebhook.Embed{}
 
 	// embed fields
-	eTitle := p.Player.Alias.String
-	eDesc := fmt.Sprintf("player divs\nsoldier: %s\ndemo: %s", p.Player.SoldierDiv.String, p.Player.DemoDiv.String)
-	eUrl := fmt.Sprintf("%s/players/%s", internal.OidRealm, p.Player.ID)
+	eAuthor := p.Player.Alias.String
+	eAUrl := fmt.Sprintf("%s/players/%s", internal.OidRealm, p.Player.ID)
+	eAIconUrl := p.Player.AvatarUrl.String
+	eDesc := fmt.Sprintf("Soldier Div - %s\nDemo Div - %s\n Joined %s", p.Player.SoldierDiv.String, p.Player.DemoDiv.String, relativeTimestamp(p.Player.CreatedAt))
 	embeds = append(embeds, discordwebhook.Embed{
-		Title:       &eTitle,
-		Url:         &eUrl,
+		Author: &discordwebhook.Author{
+			Name:    &eAuthor,
+			Url:     &eAUrl,
+			IconUrl: &eAIconUrl,
+		},
+		Description: &eDesc,
+		Color:       &ColorTempus,
+	})
+
+	// send message
+	err = discordwebhook.SendMessage(playersWebhookUrl, discordwebhook.Message{
+		Content: &content,
+		Embeds:  &embeds,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func NewPlayerRequestTask(rwp models.RequestWithPlayer) (*asynq.Task, error) {
+	payload, err := json.Marshal(requestPayload{
+		Payload: rwp,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return asynq.NewTask(TypeEventEnded, payload), nil
+}
+
+func HandleNewPlayerRequestTask(ctx context.Context, t asynq.Task) error {
+	var rp requestPayload
+	err := json.Unmarshal(t.Payload(), &rp)
+	if err != nil {
+		return err
+	}
+	request := rp.Payload.Request
+	player := rp.Payload.Player
+
+	// fill message fields
+	content := "A player created a request"
+	embeds := []discordwebhook.Embed{}
+
+	// embed fields
+	eAuthor := player.Alias
+	eAUrl := fmt.Sprintf("%s/players/%s", internal.OidRealm, player.ID)
+	eAIconUrl := player.AvatarURL
+	eDesc := fmt.Sprintf("Type - %s\nContent - %s\nCreated %s", request.Kind, request.Content, request.CreatedAt)
+	embeds = append(embeds, discordwebhook.Embed{
+		Author: &discordwebhook.Author{
+			Name:    &eAuthor,
+			Url:     &eAUrl,
+			IconUrl: &eAIconUrl,
+		},
 		Description: &eDesc,
 		Color:       &ColorDecimalContent,
 	})
 
 	// send message
-	err = discordwebhook.SendMessage(eventsWebhookUrl, discordwebhook.Message{
+	err = discordwebhook.SendMessage(playersWebhookUrl, discordwebhook.Message{
 		Content: &content,
 		Embeds:  &embeds,
 	})
