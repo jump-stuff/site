@@ -1,6 +1,7 @@
--- name: InsertRequest :exec
+-- name: InsertRequest :one
 insert into request (player_id, kind, content)
-  values (?, ?, ?);
+  values (?, ?, ?)
+  returning *;
 
 -- name: SelectPlayerRequests :many
 select sqlc.embed(player), sqlc.embed(request) from request

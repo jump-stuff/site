@@ -10,6 +10,8 @@ import (
 	"github.com/jump-fortress/site/db/queries"
 	"github.com/jump-fortress/site/internal/principal"
 	"github.com/jump-fortress/site/models"
+	"github.com/jump-fortress/site/tasks"
+	"github.com/jump-fortress/site/tasks/client"
 )
 
 func HandleSubmitRequest(ctx context.Context, input *models.RequestInput) (*struct{}, error) {
@@ -30,6 +32,11 @@ func HandleSubmitRequest(ctx context.Context, input *models.RequestInput) (*stru
 		return nil, huma.Error409Conflict(fmt.Sprintf("%s request already exists", input.Kind))
 	}
 
+	player, err := db.Queries.SelectPlayer(ctx, principal.SteamID.String())
+	if err != nil {
+		return nil, models.WrapDBErr(err)
+	}
+
 	// validate alias
 	if input.Kind == "alias update" {
 		if len(input.Content) > 32 {
@@ -40,10 +47,6 @@ func HandleSubmitRequest(ctx context.Context, input *models.RequestInput) (*stru
 		}
 		// div request
 	} else {
-		player, err := db.Queries.SelectPlayer(ctx, principal.SteamID.String())
-		if err != nil {
-			return nil, models.WrapDBErr(err)
-		}
 		if !player.TempusID.Valid {
 			return nil, huma.Error400BadRequest("missing a Tempus ID")
 		}
@@ -52,7 +55,7 @@ func HandleSubmitRequest(ctx context.Context, input *models.RequestInput) (*stru
 		}
 	}
 
-	err = db.Queries.InsertRequest(ctx, queries.InsertRequestParams{
+	request, err := db.Queries.InsertRequest(ctx, queries.InsertRequestParams{
 		PlayerID: principal.SteamID.String(),
 		Kind:     input.Kind,
 		Content:  input.Content,
@@ -60,6 +63,13 @@ func HandleSubmitRequest(ctx context.Context, input *models.RequestInput) (*stru
 	if err != nil {
 		return nil, models.WrapDBErr(err)
 	}
+
+	// relay to #div-talk
+	task, err := tasks.NewPlayerRequestTask(models.RequestWithPlayer{
+		Request: models.GetRequestResponse(request),
+		Player:  models.GetPlayerResponse(player, false),
+	})
+	client.QueueTask(task, fmt.Sprintf("%s%s", player.ID, request.Kind))
 
 	return nil, nil
 }

@@ -15,7 +15,6 @@ import (
 	"github.com/jump-fortress/site/db"
 	"github.com/jump-fortress/site/db/queries"
 	"github.com/jump-fortress/site/env"
-	"github.com/jump-fortress/site/internal"
 	"github.com/jump-fortress/site/models"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -29,6 +28,8 @@ const (
 	TypeEventVisible = "event:visible"
 	TypeEventStarted = "event:started"
 	TypeEventEnded   = "event:ended"
+	TypeSetTempusID  = "player:tempusid"
+	TypeNewRequest   = "player:request"
 )
 
 // webhook URLs
@@ -36,6 +37,7 @@ var (
 	testWebhookUrl    string
 	eventsWebhookUrl  string
 	playersWebhookUrl string
+	siteRealm         string
 
 	ColorDecimalContent = "13489908"
 	ColorDecimalPrimary = "11845374"
@@ -76,10 +78,11 @@ func roleMention(eventName string) string {
 }
 
 func relativeTimestamp(t time.Time) string {
-	return fmt.Sprintf("<t:%d:R", t.UnixMilli())
+	return fmt.Sprintf("<t:%d:R>", t.Unix())
 }
 
 func InitWebhookUrls() {
+	siteRealm = env.GetString("JUMP_OID_REALM")
 	testWebhookUrl = env.GetString("JUMP_WEBHOOK_TEST_URL")
 	eventsWebhookUrl = env.GetString("JUMP_WEBHOOK_EVENTS_URL")
 	playersWebhookUrl = env.GetString("JUMP_WEBHOOK_PLAYERS_URL")
@@ -141,7 +144,7 @@ func HandleEventVisibleTask(ctx context.Context, t *asynq.Task) error {
 	// embed fields
 	eTitle := fmt.Sprintf("%s #%d", eventName, ep.Event.Event.KindID)
 	eDesc := fmt.Sprintf("starts %s", relativeTimestamp(ep.Event.Event.StartsAt))
-	eUrl := fmt.Sprintf("%s/formats/%s/%d", internal.OidRealm, ep.Event.Event.Kind, ep.Event.Event.KindID)
+	eUrl := fmt.Sprintf("%s/formats/%s/%d", siteRealm, ep.Event.Event.Kind, ep.Event.Event.KindID)
 	embeds = append(embeds, discordwebhook.Embed{
 		Title:       &eTitle,
 		Url:         &eUrl,
@@ -190,7 +193,7 @@ func HandleEventStartedTask(ctx context.Context, t *asynq.Task) error {
 	// embed fields
 	eTitle := fmt.Sprintf("%s #%d", eventName, ep.Event.Event.KindID)
 	eDesc := fmt.Sprintf("ends %s", relativeTimestamp(ep.Event.Event.EndsAt))
-	eUrl := fmt.Sprintf("%s/formats/%s/%d", internal.OidRealm, ep.Event.Event.Kind, ep.Event.Event.KindID)
+	eUrl := fmt.Sprintf("%s/formats/%s/%d", siteRealm, ep.Event.Event.Kind, ep.Event.Event.KindID)
 	embeds = append(embeds, discordwebhook.Embed{
 		Title:       &eTitle,
 		Url:         &eUrl,
@@ -255,7 +258,7 @@ func HandleEventEndedTask(ctx context.Context, t *asynq.Task) error {
 	// embed fields
 	eTitle := fmt.Sprintf("%s #%d", eventName, ep.Event.Event.KindID)
 	eDesc := fmt.Sprintf("ended %s\n\n the winning times are..\n%s", relativeTimestamp(ep.Event.Event.EndsAt), &winningTimes)
-	eUrl := fmt.Sprintf("%s/formats/%s/%d", internal.OidRealm, ep.Event.Event.Kind, ep.Event.Event.KindID)
+	eUrl := fmt.Sprintf("%s/formats/%s/%d", siteRealm, ep.Event.Event.Kind, ep.Event.Event.KindID)
 	embeds = append(embeds, discordwebhook.Embed{
 		Title:       &eTitle,
 		Url:         &eUrl,
@@ -279,18 +282,19 @@ func HandleEventEndedTask(ctx context.Context, t *asynq.Task) error {
 }
 
 func NewPlayerSetTempusIDTask(player queries.Player) (*asynq.Task, error) {
+	fmt.Println("yes we are makingg")
 	payload, err := json.Marshal(playerPayload{
 		Player: player,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return asynq.NewTask(TypeEventEnded, payload), nil
+	return asynq.NewTask(TypeSetTempusID, payload), nil
 }
 
 // players
 
-func HandleNewPlayerSetTempusIDTask(ctx context.Context, t asynq.Task) error {
+func HandleNewPlayerSetTempusIDTask(ctx context.Context, t *asynq.Task) error {
 	var p playerPayload
 	err := json.Unmarshal(t.Payload(), &p)
 	if err != nil {
@@ -303,7 +307,7 @@ func HandleNewPlayerSetTempusIDTask(ctx context.Context, t asynq.Task) error {
 
 	// embed fields
 	eAuthor := p.Player.Alias.String
-	eAUrl := fmt.Sprintf("%s/players/%s", internal.OidRealm, p.Player.ID)
+	eAUrl := fmt.Sprintf("%s/players/%s", siteRealm, p.Player.ID)
 	eAIconUrl := p.Player.AvatarUrl.String
 	eDesc := fmt.Sprintf("Soldier Div - %s\nDemo Div - %s\n Joined %s", p.Player.SoldierDiv.String, p.Player.DemoDiv.String, relativeTimestamp(p.Player.CreatedAt))
 	embeds = append(embeds, discordwebhook.Embed{
@@ -334,10 +338,10 @@ func NewPlayerRequestTask(rwp models.RequestWithPlayer) (*asynq.Task, error) {
 	if err != nil {
 		return nil, err
 	}
-	return asynq.NewTask(TypeEventEnded, payload), nil
+	return asynq.NewTask(TypeNewRequest, payload), nil
 }
 
-func HandleNewPlayerRequestTask(ctx context.Context, t asynq.Task) error {
+func HandleNewPlayerRequestTask(ctx context.Context, t *asynq.Task) error {
 	var rp requestPayload
 	err := json.Unmarshal(t.Payload(), &rp)
 	if err != nil {
@@ -352,9 +356,9 @@ func HandleNewPlayerRequestTask(ctx context.Context, t asynq.Task) error {
 
 	// embed fields
 	eAuthor := player.Alias
-	eAUrl := fmt.Sprintf("%s/players/%s", internal.OidRealm, player.ID)
+	eAUrl := fmt.Sprintf("%s/players/%s", siteRealm, player.ID)
 	eAIconUrl := player.AvatarURL
-	eDesc := fmt.Sprintf("Type - %s\nContent - %s\nCreated %s", request.Kind, request.Content, request.CreatedAt)
+	eDesc := fmt.Sprintf("Type - %s\nContent - %s\nCreated %s", request.Kind, request.Content, relativeTimestamp(request.CreatedAt))
 	embeds = append(embeds, discordwebhook.Embed{
 		Author: &discordwebhook.Author{
 			Name:    &eAuthor,

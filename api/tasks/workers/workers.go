@@ -24,6 +24,11 @@ func ServeWorker(ctx context.Context) {
 
 	mux := asynq.NewServeMux()
 	mux.HandleFunc(tasks.TypeWebhookReady, tasks.HandleWebhookReadyTask)
+	mux.HandleFunc(tasks.TypeEventVisible, tasks.HandleEventVisibleTask)
+	mux.HandleFunc(tasks.TypeEventStarted, tasks.HandleEventStartedTask)
+	mux.HandleFunc(tasks.TypeEventEnded, tasks.HandleEventEndedTask)
+	mux.HandleFunc(tasks.TypeSetTempusID, tasks.HandleNewPlayerSetTempusIDTask)
+	mux.HandleFunc(tasks.TypeNewRequest, tasks.HandleNewPlayerRequestTask)
 
 	go func() {
 		err := srv.Run(mux)

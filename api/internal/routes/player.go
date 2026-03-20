@@ -14,6 +14,8 @@ import (
 	"github.com/jump-fortress/site/internal/principal"
 	"github.com/jump-fortress/site/internal/tempus"
 	"github.com/jump-fortress/site/models"
+	"github.com/jump-fortress/site/tasks"
+	"github.com/jump-fortress/site/tasks/client"
 )
 
 var (
@@ -137,6 +139,12 @@ func HandleSetTempusID(ctx context.Context, input *models.TempusIDInput) (*struc
 		return nil, models.WrapDBErr(err)
 	}
 
+	// relay to #div-talk
+	player.TempusID.Int64 = input.TempusID
+	task, err := tasks.NewPlayerSetTempusIDTask(player)
+	fmt.Println("making task")
+	client.QueueTask(task, fmt.Sprintf("%s%d", player.ID, input.TempusID))
+	fmt.Println("and made i hope")
 	return nil, nil
 }
 

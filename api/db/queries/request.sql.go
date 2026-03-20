@@ -30,9 +30,10 @@ func (q *Queries) CheckPendingRequestExists(ctx context.Context, arg CheckPendin
 	return column_1, err
 }
 
-const insertRequest = `-- name: InsertRequest :exec
+const insertRequest = `-- name: InsertRequest :one
 insert into request (player_id, kind, content)
   values (?, ?, ?)
+  returning id, player_id, kind, content, pending, created_at
 `
 
 type InsertRequestParams struct {
@@ -41,9 +42,18 @@ type InsertRequestParams struct {
 	Content  string
 }
 
-func (q *Queries) InsertRequest(ctx context.Context, arg InsertRequestParams) error {
-	_, err := q.db.ExecContext(ctx, insertRequest, arg.PlayerID, arg.Kind, arg.Content)
-	return err
+func (q *Queries) InsertRequest(ctx context.Context, arg InsertRequestParams) (Request, error) {
+	row := q.db.QueryRowContext(ctx, insertRequest, arg.PlayerID, arg.Kind, arg.Content)
+	var i Request
+	err := row.Scan(
+		&i.ID,
+		&i.PlayerID,
+		&i.Kind,
+		&i.Content,
+		&i.Pending,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const resolveRequest = `-- name: ResolveRequest :exec
