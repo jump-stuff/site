@@ -157,6 +157,7 @@
 
         {#if ended_days < 1 && playerLeaderboard}
           <Button
+            grow={true}
             onsubmit={async () => {
               let resp = await Client.POST(ApiPaths.submit_time, {
                 params: { path: { leaderboard_id: selectedLeaderboardID } }
@@ -166,7 +167,7 @@
                 refreshPR = !refreshPR;
               }
               return resp.response.ok;
-            }}>refresh from Tempus PR</Button>
+            }}>refresh PR from Tempus<span class="icon-[mdi--refresh]"></span></Button>
 
           <Collapse label="manually submit time">
             <Input
