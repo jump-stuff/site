@@ -8,6 +8,7 @@
   import plaza from '$lib/assets/components/profile/plaza.png';
   import no_map from '$lib/assets/no_map.png';
   import Launcher from '../Launcher.svelte';
+  import { PUBLIC_JUMP_IMAGES_URL } from '$env/static/public';
 
   type Props = {
     player: Player;
@@ -21,7 +22,7 @@
   {#if player.map_pref}
     <div
       class="h-36 w-full mask-b-from-98% bg-cover bg-center"
-      style:background-image={`url("https://tempusplaza.com/map-backgrounds/${player.map_pref}.webp")`}>
+      style:background-image={`url("${PUBLIC_JUMP_IMAGES_URL}/maps/${player.map_pref}.webp")`}>
     </div>
   {:else}
     <div class="h-36 w-full mask-b-from-98%">

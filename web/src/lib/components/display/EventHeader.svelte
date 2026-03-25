@@ -4,6 +4,7 @@
   import Div from './Div.svelte';
   import TemporalDate from './TemporalDate.svelte';
   import no_map from '$lib/assets/no_map.png';
+  import { PUBLIC_JUMP_IMAGES_URL } from '$env/static/public';
 
   type Props = {
     event: EventWithLeaderboards;
@@ -128,7 +129,7 @@
 {#snippet mapimage(map: string)}
   <img
     class="over absolute z-10 h-48 w-full scale-105 object-cover brightness-75 transition-all select-none not-first:mask-x-from-98% not-last:mask-x-from-98% group-hover:brightness-100"
-    src="https://tempusplaza.com/map-backgrounds/{map}.webp"
+    src="{PUBLIC_JUMP_IMAGES_URL}/maps/{map}.jpg"
     alt=""
     draggable="false" />
 {/snippet}

@@ -1,5 +1,6 @@
 <script lang="ts">
   import Div from '../Div.svelte';
+  import { PUBLIC_JUMP_IMAGES_URL } from '$env/static/public';
 
   type Props = {
     map: string;
@@ -14,7 +15,7 @@
   <span class="relative z-10 truncate">{map}</span>
   <img
     class="absolute size-full object-cover brightness-75 transition-all group-hover:brightness-100"
-    src="https://tempusplaza.com/map-backgrounds/{map}.webp"
+    src="{PUBLIC_JUMP_IMAGES_URL}/maps/{map}.jpg"
     alt=""
     draggable="false"
     loading="lazy" />
