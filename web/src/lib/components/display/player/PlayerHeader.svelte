@@ -21,8 +21,8 @@
 <div class="relative z-10 h-56 flex-col overflow-hidden bg-base-900">
   {#if player.map_pref}
     <div
-      class="h-36 w-full mask-b-from-98% bg-cover bg-center"
-      style:background-image={`url("${PUBLIC_JUMP_IMAGES_URL}/maps/${player.map_pref}.webp")`}>
+      class="map-img h-36 w-full mask-b-from-98% bg-cover bg-center"
+      style:background-image={`url("${PUBLIC_JUMP_IMAGES_URL}/maps/${player.map_pref}.jpg")`}>
     </div>
   {:else}
     <div class="h-36 w-full mask-b-from-98%">

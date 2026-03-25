@@ -14,7 +14,7 @@
   class="group relative grid size-full scale-x-105 place-content-center text-shadow-xs/100 text-shadow-base-900 not-first:mask-l-from-97% not-last:mask-r-from-97%">
   <span class="relative z-10 truncate">{map}</span>
   <img
-    class="absolute size-full object-cover brightness-75 transition-all group-hover:brightness-100"
+    class="map-img absolute size-full object-cover brightness-75 transition-all group-hover:brightness-100"
     src="{PUBLIC_JUMP_IMAGES_URL}/maps/{map}.jpg"
     alt=""
     draggable="false"

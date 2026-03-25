@@ -80,6 +80,10 @@
     @apply outline-0 focus:outline-0;
   }
 
+  .map-img {
+    @apply bg-base-900;
+  }
+
   .filter-lavender {
     filter: brightness(0) saturate(100%) invert(97%) sepia(49%) saturate(6023%) hue-rotate(179deg)
       brightness(100%) contrast(108%);
