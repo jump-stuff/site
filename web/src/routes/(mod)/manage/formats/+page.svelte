@@ -95,7 +95,7 @@
     <Select
       label="kind"
       type="button"
-      options={['monthly', 'archive', 'motw']}
+      options={['monthly', 'archive', 'motw', 'test']}
       bind:value={event_kind}
       withSubmit={false}
       onsubmit={async () => {
@@ -146,7 +146,8 @@
             }} />
         </div>
 
-        {#if event_kind === 'archive'}
+        <!-- input end datetime -->
+        {#if event_kind !== 'monthly' && event_kind !== 'motw'}
           <div class="flex gap-1">
             <Input
               label="end date"
