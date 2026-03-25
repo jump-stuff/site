@@ -14,6 +14,8 @@ import (
 	"github.com/jump-fortress/site/internal/principal"
 	"github.com/jump-fortress/site/internal/rows"
 	"github.com/jump-fortress/site/models"
+	"github.com/jump-fortress/site/tasks"
+	"github.com/jump-fortress/site/tasks/client"
 )
 
 func motwNotEnded(kind string, endsAt time.Time) bool {
@@ -30,6 +32,17 @@ func getEndsAt(kind string, starts_at time.Time) time.Time {
 	default:
 		// return, since ends_at was actually passed in
 		return starts_at
+	}
+}
+
+// todo: starts_at and ends_at tasks will not complete if changed after event is visible
+func ScheduleUpdatedEventTasks(old models.Event, new models.Event) {
+	if !old.VisibleAt.Equal(new.VisibleAt) {
+		task, err := tasks.NewEventVisibleTask(new)
+		if err != nil {
+			return
+		}
+		client.QueueScheduledTask(task, fmt.Sprintf("%s%dvisible_updated", new.Kind, new.KindID), new.VisibleAt)
 	}
 }
 
@@ -287,7 +300,7 @@ func HandleCreateEvent(ctx context.Context, input *models.EventInput) (*struct{}
 	endsAt = getEndsAt(ie.Kind, endsAt)
 
 	// create event
-	_, err = db.Queries.InsertEvent(ctx, queries.InsertEventParams{
+	createdEvent, err := db.Queries.InsertEvent(ctx, queries.InsertEventParams{
 		Kind:      ie.Kind,
 		KindID:    kindID,
 		Class:     ie.PlayerClass,
@@ -298,6 +311,12 @@ func HandleCreateEvent(ctx context.Context, input *models.EventInput) (*struct{}
 	if err != nil {
 		return nil, models.WrapDBErr(err)
 	}
+
+	// relay delayed visible_at announcement to #event-updates
+	// starts_at task is queued after a successful visible_at announcement
+	// ends_at task is queued after a successful starts_at announcement
+	task, err := tasks.NewEventVisibleTask(models.GetEventResponse(createdEvent))
+	client.QueueScheduledTask(task, fmt.Sprintf("%s%d%svisible", createdEvent.Kind, createdEvent.KindID, createdEvent.VisibleAt.String()), createdEvent.VisibleAt)
 
 	return nil, nil
 }
@@ -329,6 +348,7 @@ func HandleUpdateEvent(ctx context.Context, input *models.EventInput) (*struct{}
 	}
 
 	// if changing event kind, kind id needs to be re-calculated
+	// todo: this should never happen because of the earlier check?
 	kindID := event.KindID
 	if ie.Kind != event.Kind {
 		// set ID for next event
@@ -340,17 +360,18 @@ func HandleUpdateEvent(ctx context.Context, input *models.EventInput) (*struct{}
 	}
 
 	// update event
-	endsAt := ie.EndsAt
-	endsAt = getEndsAt(ie.Kind, ie.EndsAt)
+	ie.EndsAt = getEndsAt(ie.Kind, ie.EndsAt)
 	err = db.Queries.UpdateEvent(ctx, queries.UpdateEventParams{
 		Kind:      ie.Kind,
 		KindID:    kindID,
 		Class:     ie.PlayerClass,
 		VisibleAt: ie.VisibleAt,
 		StartsAt:  ie.StartsAt,
-		EndsAt:    endsAt,
+		EndsAt:    ie.EndsAt,
 		ID:        ie.ID,
 	})
+
+	ScheduleUpdatedEventTasks(models.GetEventResponse(event), ie)
 
 	return nil, nil
 }

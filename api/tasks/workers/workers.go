@@ -23,7 +23,7 @@ func ServeWorker(ctx context.Context) {
 	)
 
 	mux := asynq.NewServeMux()
-	mux.HandleFunc(tasks.TypeWebhookReady, tasks.HandleWebhookReadyTask)
+	mux.HandleFunc("test:ready", tasks.HandleWebhookReadyTask)
 	mux.HandleFunc(tasks.TypeEventVisible, tasks.HandleEventVisibleTask)
 	mux.HandleFunc(tasks.TypeEventStarted, tasks.HandleEventStartedTask)
 	mux.HandleFunc(tasks.TypeEventEnded, tasks.HandleEventEndedTask)

@@ -3,7 +3,7 @@ package models
 import "time"
 
 var Divs = []string{"Diamond", "Platinum", "Gold", "Silver", "Bronze", "Steel", "Wood"}
-var EventKinds = []string{"monthly", "archive", "motw"}
+var EventKinds = []string{"monthly", "archive", "motw", "test"}
 
 type Session struct {
 	ID        string `json:"id"`
@@ -31,7 +31,7 @@ type Player struct {
 
 type Event struct {
 	ID          int64     `json:"id"`
-	Kind        string    `json:"kind" enum:"monthly,archive,motw"`
+	Kind        string    `json:"kind" enum:"monthly,archive,motw,test"`
 	KindID      int64     `json:"kind_id"`
 	PlayerClass string    `json:"player_class" enum:"Soldier,Demo"`
 	VisibleAt   time.Time `json:"visible_at"`
