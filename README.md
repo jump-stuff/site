@@ -1,12 +1,12 @@
 # site
+A platform to host, manage, and view data for TF2 Rocket Jumping & Sticky Jumping competitions. supports live leaderboards, prizepools, player profiles, announcement and moderation tasks, and more!
 
 this repo includes a..
 
 - Go API, task handling, and sqlite3 database in [/api](api)
 - Svelte + TypeScript frontend in [/web](web)
 
-development tracking currently takes place within a private Linear workspace, but help is welcome! contact me at [spiritov_v@pm.me](mailto:spiritov_v@pm.me)
-
+some project notes..
 - api docs are provided at `/docs` (see [.env.local.example](api/env/.env.local.example?plain=1#L17))
 - [asynq](https://github.com/hibiken/asynq/) with Redis is used for distributed task handling
 - [migrate cli](https://github.com/golang-migrate/migrate) is used to manage sql migrations
